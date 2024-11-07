@@ -4,7 +4,7 @@ from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from handlers.search import startSearchSession
+from bot.handlers.search import startSearchSession
 
 search_button_text = "Искать мероприятия"
 post_button_text = "Разместить свое мероприятие"

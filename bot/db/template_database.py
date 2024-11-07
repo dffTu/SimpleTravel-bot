@@ -1,10 +1,9 @@
-from typing import Any
-from db.constants import PostInfo, SearchInfo
+from bot.db.constants import PostInfo, SearchInfo
 
 
 class Database:
     def add_post(self, info: PostInfo):
         pass
 
-    def get_posts(self, info: SearchInfo) -> SearchInfo:
+    def get_posts(self, info: SearchInfo) -> list[PostInfo]:
         pass

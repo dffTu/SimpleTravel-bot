@@ -1,7 +1,7 @@
 import sqlite3
 from typing import Any
-from db.template_database import Database
-from db.constants import PostInfo, SearchInfo
+from bot.db.template_database import Database
+from bot.db.constants import PostInfo, SearchInfo
 
 
 class SQLiteDatabase(Database):

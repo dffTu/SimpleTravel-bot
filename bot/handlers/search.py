@@ -7,7 +7,7 @@ from aiogram import Router, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from dateutil import parser
-from create_bot import SearchInfo, database
+from bot.create_bot import SearchInfo, database
 
 
 search_router = Router()
