@@ -1,7 +1,10 @@
 import asyncio
 from aiogram import Router, F, types
 from aiogram.filters import CommandStart, Command
+from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
+
+from handlers.search import startSearchSession
 
 search_button_text = "Искать мероприятия"
 post_button_text = "Разместить свое мероприятие"
@@ -36,25 +39,25 @@ start_markup = InlineKeyboardMarkup(inline_keyboard=start_buttons)
 
 
 @start_router.message(CommandStart())
-async def cmd_start(message: Message):
+async def cmd_start(message: Message, state: FSMContext):
     await message.answer(welcome_message, reply_markup=start_markup)
 
 
 # Обработчик для кнопки "Искать мероприятия"
 @start_router.callback_query(lambda c: c.data and c.data.startswith("search"))
-async def search_activities(callback: types.CallbackQuery):
-    await asyncio.gather(
-        await callback.answer(),  # Убираем индикатор загрузки
-        await callback.message.delete_reply_markup(),  # Убираем кнопки у сообщения
-        await callback.message.answer(
-            "Прекрасно! Давайте найдем для вас что-то интересное... (Пока все)"
-        ),
-    )
+async def search_activities(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer(),  # Убираем индикатор загрузки
+    await callback.message.delete_reply_markup(),  # Убираем кнопки у сообщения
+    await callback.message.answer(
+        "Прекрасно! Давайте найдем для вас что-то интересное..."
+    ),
+    await startSearchSession(callback, state)
 
 
-# Обработчик для кнопки "Выложить свое мероприятие"
+
+# Обработчик для кнопки "Разместить свое мероприятие"
 @start_router.callback_query(lambda c: c.data and c.data.startswith("post"))
-async def post_activity(callback: types.CallbackQuery):
+async def post_activity(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer(),  # Убираем индикатор загрузки
     await callback.message.delete_reply_markup(),  # Убираем кнопки у сообщения
     await callback.message.answer(
