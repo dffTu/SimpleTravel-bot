@@ -26,9 +26,10 @@ class SQLiteDatabase(Database):
                             (info.name, info.date, info.region, str(info.photos), info.contacts))
         self.db.commit()
 
-    def get_posts(self, info: SearchInfo) -> list[Any]:
+    def get_posts(self, info: SearchInfo) -> list[PostInfo]:
         self.cursor.execute('SELECT * FROM Posts WHERE region = ? AND date = ?', (info.region, info.date))
         posts = self.cursor.fetchall()
+        posts = list(map(lambda x: PostInfo(*x), map(lambda x: x[1:], posts)))
         return posts
 
     def __del__(self):
