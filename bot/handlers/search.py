@@ -7,6 +7,7 @@ from aiogram import Router, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from dateutil import parser
+from create_bot import SearchInfo, database
 
 
 search_router = Router()
@@ -17,10 +18,10 @@ class SearchForm(StatesGroup):
     region_qestion = State()
 
 
-async def startSearchSession(callback: types.CallbackQuery, state: FSMContext):
+async def startSearchSession(message: types.Message, state: FSMContext):
     await asyncio.sleep(1.2)
-    await callback.message.answer("Введите желаемую дату мероприятия")
-    logging.info(f'Set date_question state for user with id {callback.from_user.id}')
+    await message.answer("Введите желаемую дату мероприятия.")
+    logging.info(f"Set date_question state for user with id {message.from_user.id}")
     await state.set_state(SearchForm.date_question)
 
 
@@ -31,12 +32,12 @@ async def processDate(message: types.Message, state: FSMContext):
         date = parser.parse(message.text)
     except ValueError:
         message.answer(
-            "Не удалось распознать введенную дату. Попробуйте ввести в формате YYYY-MM-DD"
+            "Не удалось распознать введенную дату. Попробуйте ввести в формате YYYY-MM-DD."
         )
         return
     await state.update_data(date=date)
 
-    await message.answer("Введите желаемый регион мероприятия")
+    await message.answer("Введите желаемый регион мероприятия.")
     await state.set_state(SearchForm.region_qestion)
 
 
@@ -46,9 +47,26 @@ async def processRegion(message: types.Message, state: FSMContext):
     await state.update_data(region=region)
 
     data = await state.get_data()
-    await doSearch(message, **data)
-    await state.clear()
+    found_posts = await doSearch(message, state, **data)
+    if found_posts:
+        await state.clear()
+    else:
+        await startSearchSession(message, state)
 
 
-async def doSearch(message: types.Message, date: datetime, region: str):
-    await message.answer(f"Введенные данные: дата: {date}, регион: {region}")
+async def doSearch(
+    message: types.Message, state: FSMContext, date: datetime, region: str
+) -> bool:
+    search_info = SearchInfo(date.strftime("%d.%m.%Y"), region)
+    logging.debug(f"search_info=date:{search_info.date},region={search_info.region}")
+    posts = database.get_posts(SearchInfo(date.strftime("%d.%m.%Y"), region))
+    logging.debug(f"posts={str(posts)}")
+    if not posts:
+        await message.answer(
+            "К сожалению, мы не нашли мероприятий, соответствующих вашим фильтрам. Попробуйте изменить параметры поиска или зайдите позже."
+        )
+        return False
+    # TODO: support multiple posts
+    post = posts[0]
+    await message.answer(str(post))
+    return True

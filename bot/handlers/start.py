@@ -51,7 +51,7 @@ async def search_activities(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.answer(
         "Прекрасно! Давайте найдем для вас что-то интересное..."
     ),
-    await startSearchSession(callback, state)
+    await startSearchSession(callback.message, state)
 
 
 

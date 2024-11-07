@@ -1,4 +1,5 @@
 import sqlite3
+from typing import Any
 from db.template_database import Database
 from db.constants import PostInfo, SearchInfo
 
@@ -25,7 +26,7 @@ class SQLiteDatabase(Database):
                             (info.name, info.date, info.region, str(info.photos), info.contacts))
         self.db.commit()
 
-    def get_posts(self, info: SearchInfo):
+    def get_posts(self, info: SearchInfo) -> list[Any]:
         self.cursor.execute('SELECT * FROM Posts WHERE region = ? AND date = ?', (info.region, info.date))
         posts = self.cursor.fetchall()
         return posts
