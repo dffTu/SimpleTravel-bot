@@ -1,17 +1,62 @@
-from aiogram import Router, F
+import asyncio
+from aiogram import Router, F, types
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
+
+search_button_text = "Искать мероприятия"
+post_button_text = "Разместить свое мероприятие"
+welcome_message = f"""
+🌍 Добро пожаловать в SimpleTravel!
+
+Рады приветствовать вас в SimpleTravel — вашем универсальном помощнике для поиска, размещения и бронирования разнообразных активностей, включая туры, экскурсии, концерты и многое другое.
+
+🔍 Что мы предлагаем:
+
+- Поиск и Бронирование: Легко находите и бронируйте активности, которые вам интересны.
+- Размещение Ваших Активностей: У вас есть уникальное мероприятие? Разместите его у нас и привлекайте больше участников!
+- Разнообразие: Богатый выбор мероприятий и аттракций на любой вкус.
+- Удобная Фильтрация: Используйте наши фильтры, чтобы быстро и без лишних хлопот найти именно то, что вам нужно.
+
+❗ Как начать:
+
+1. {search_button_text}: Выберите эту опцию для просмотра и бронирования доступных активностей.
+
+2. {post_button_text}: Хотите разместить свое мероприятие? Выберите эту опцию, и мы поможем вам начать.
+
+Если у вас есть вопросы или нужна помощь, просто напишите нам — мы всегда рады помочь!
+"""
 
 start_router = Router()
 
+start_buttons = [
+    [InlineKeyboardButton(text=search_button_text, callback_data="search")],
+    [InlineKeyboardButton(text=post_button_text, callback_data="post")],
+]
+start_markup = InlineKeyboardMarkup(inline_keyboard=start_buttons)
+
+
 @start_router.message(CommandStart())
 async def cmd_start(message: Message):
-    await message.answer('Запуск сообщения по команде /start используя фильтр CommandStart()')
+    await message.answer(welcome_message, reply_markup=start_markup)
 
-@start_router.message(Command('start_2'))
-async def cmd_start_2(message: Message):
-    await message.answer('Запуск сообщения по команде /start_2 используя фильтр Command()')
 
-@start_router.message(F.text == '/start_3')
-async def cmd_start_3(message: Message):
-    await message.answer('Запуск сообщения по команде /start_3 используя магический фильтр F.text!')
+# Обработчик для кнопки "Искать мероприятия"
+@start_router.callback_query(lambda c: c.data and c.data.startswith("search"))
+async def search_activities(callback: types.CallbackQuery):
+    await asyncio.gather(
+        await callback.answer(),  # Убираем индикатор загрузки
+        await callback.message.delete_reply_markup(),  # Убираем кнопки у сообщения
+        await callback.message.answer(
+            "Прекрасно! Давайте найдем для вас что-то интересное... (Пока все)"
+        ),
+    )
+
+
+# Обработчик для кнопки "Выложить свое мероприятие"
+@start_router.callback_query(lambda c: c.data and c.data.startswith("post"))
+async def post_activity(callback: types.CallbackQuery):
+    await callback.answer(),  # Убираем индикатор загрузки
+    await callback.message.delete_reply_markup(),  # Убираем кнопки у сообщения
+    await callback.message.answer(
+        "Отлично! Мы поможем вам разместить ваше мероприятие. (Пока все)"
+    ),
