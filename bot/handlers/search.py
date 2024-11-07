@@ -1,13 +1,12 @@
 import asyncio
 from datetime import datetime
 import logging
-from operator import call
-from typing import Any, Dict
 from aiogram import Router, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from dateutil import parser
-from bot.create_bot import SearchInfo, database
+from bot.create_bot import database
+from bot.db.constants import SearchInfo
 
 
 search_router = Router()

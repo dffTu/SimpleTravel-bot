@@ -1,13 +1,16 @@
+from dataclasses import dataclass
+
+
+@dataclass
 class PostInfo:
-    def __init__(self, name: str, date: str, region: str, photos: list[str], contacts: str):
-        self.name = name
-        self.date = date
-        self.region = region
-        self.photos = photos
-        self.contacts = contacts
+    name: str
+    date: str
+    region: str
+    photos: list[str]
+    contacts: str
 
 
+@dataclass
 class SearchInfo:
-    def __init__(self, date: str, region: str):
-        self.date = date
-        self.region = region
+    date: str
+    region: str
