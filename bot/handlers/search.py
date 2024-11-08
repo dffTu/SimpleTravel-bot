@@ -12,6 +12,12 @@ from urllib.parse import urlencode
 
 search_router = Router()
 
+search_end_keybord = types.InlineKeyboardMarkup(
+    inline_keyboard=[
+        [types.InlineKeyboardButton(text="Искать еще", callback_data="search_more")]
+    ]
+)
+
 
 class SearchForm(StatesGroup):
     date_question = State()
@@ -19,7 +25,7 @@ class SearchForm(StatesGroup):
 
 
 async def start_search_session(message: types.Message, state: FSMContext):
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(0.4)
     await message.answer("Введите желаемую дату мероприятия.")
     logging.info(f"Set date_question state for user with id {message.from_user.id}")
     await state.set_state(SearchForm.date_question)
@@ -66,30 +72,47 @@ async def do_search(
             "К сожалению, мы не нашли мероприятий, соответствующих вашим фильтрам. Попробуйте изменить параметры поиска или зайдите позже."
         )
         return False
+
     # TODO: support multiple posts
     post = posts[0]
     text = (
         f"🌴 Название мероприятия: {post.name}\n"
         f"📆 Дата: {post.date}\n"
-        f"📍 Место: {post.date}\n"
+        f"📍 Место: {post.region}\n"
         f"✉️ Контакт: {post.contacts}\n"
     )
 
-    # Создаем список InputMediaPhoto
-    # TODO: сделать нормально
-    media = [
-        types.InputMediaPhoto(
-            media=types.URLInputFile(
-                "https://upload.wikimedia.org/wikipedia/commons/d/dd/Atlantis_Kircher_Mundus_subterraneus_1678.jpg"
-            )
-        )
-    ]
-    # media = [types.InputMediaPhoto(media=types.URLInputFile(image_url)) for image_url in post.photos]
+    if post.photos:
+        # Создаем список InputMediaPhoto
+        # TODO: сделать нормально
+        media = [
+            types.InputMediaPhoto(
+                media=types.URLInputFile(
+                    "https://upload.wikimedia.org/wikipedia/commons/d/dd/Atlantis_Kircher_Mundus_subterraneus_1678.jpg"
+                )
+            ),
+        ]
+        # media = [types.InputMediaPhoto(media=types.URLInputFile(image_url)) for image_url in post.photos]
 
-    # Добавляем текст к первой фотографии
-    media[0].caption = text
-    media[0].parse_mode = "HTML"
+        # Добавляем текст к первой фотографии
+        media[0].caption = text
+        media[0].parse_mode = "HTML"
 
-    # Отправляем группу медиа
-    await message.answer_media_group(media)
+        # Отправляем группу медиа
+        await message.answer_media_group(media)
+    else:
+        # Если фотографий нет, просто отправляем текст
+        await message.answer(text)
+
+    # Отправляем клавиатуру в отдельном сообщении
+    await message.answer("Что хотите делать дальше?", reply_markup=search_end_keybord)
     return True
+
+
+# Обработчик callback для кнопки "Искать еще"
+@search_router.callback_query(lambda c: c.data and c.data == "search_more")
+async def process_search_more(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await callback.message.delete_reply_markup(),  # Убираем кнопки у сообщения
+    await callback.message.answer("Начинаем новый поиск...")
+    await start_search_session(callback.message, state)

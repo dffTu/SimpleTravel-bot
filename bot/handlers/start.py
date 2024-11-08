@@ -32,8 +32,8 @@ welcome_message = f"""
 start_router = Router()
 
 start_buttons = [
-    [InlineKeyboardButton(text=search_button_text, callback_data="search")],
-    [InlineKeyboardButton(text=post_button_text, callback_data="post")],
+    [InlineKeyboardButton(text=search_button_text, callback_data="start_search")],
+    [InlineKeyboardButton(text=post_button_text, callback_data="start_post")],
 ]
 start_markup = InlineKeyboardMarkup(inline_keyboard=start_buttons)
 
@@ -44,7 +44,7 @@ async def cmd_start(message: Message, state: FSMContext):
 
 
 # Обработчик для кнопки "Искать мероприятия"
-@start_router.callback_query(lambda c: c.data and c.data.startswith("search"))
+@start_router.callback_query(lambda c: c.data and c.data == "start_search")
 async def search_activities(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer(),  # Убираем индикатор загрузки
     await callback.message.delete_reply_markup(),  # Убираем кнопки у сообщения
@@ -54,9 +54,8 @@ async def search_activities(callback: types.CallbackQuery, state: FSMContext):
     await start_search_session(callback.message, state)
 
 
-
 # Обработчик для кнопки "Разместить свое мероприятие"
-@start_router.callback_query(lambda c: c.data and c.data.startswith("post"))
+@start_router.callback_query(lambda c: c.data and c.data == "start_post")
 async def post_activity(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer(),  # Убираем индикатор загрузки
     await callback.message.delete_reply_markup(),  # Убираем кнопки у сообщения
