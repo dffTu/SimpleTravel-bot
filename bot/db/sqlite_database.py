@@ -1,5 +1,6 @@
 import sqlite3
-from typing import Any
+import datetime
+from ast import literal_eval
 from bot.db.template_database import Database
 from bot.db.constants import PostInfo, SearchInfo
 
@@ -21,15 +22,21 @@ class SQLiteDatabase(Database):
         ''')
         self.db.commit()
 
+    def parse_post_info(self, value: tuple):
+        name, date, region, photos, contacts = value[1:]
+        date = datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
+        photos = literal_eval(photos)
+        return PostInfo(name, date, region, photos, contacts)
+
     def add_post(self, info: PostInfo):
         self.cursor.execute('INSERT INTO Posts (name, date, region, photos, contacts) VALUES (?, ?, ?, ?, ?)',
-                            (info.name, info.date, info.region, str(info.photos), info.contacts))
+                            (info.name, str(info.date), info.region, str(info.photos), info.contacts))
         self.db.commit()
 
     def get_posts(self, info: SearchInfo) -> list[PostInfo]:
         self.cursor.execute('SELECT * FROM Posts WHERE region = ? AND date = ?', (info.region, info.date))
         posts = self.cursor.fetchall()
-        posts = list(map(lambda x: PostInfo(*x), map(lambda x: x[1:], posts)))
+        posts = list(map(self.parse_post_info, posts))
         return posts
 
     def __del__(self):
