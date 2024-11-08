@@ -1,10 +1,11 @@
 from dataclasses import dataclass
+from datetime import datetime
 
 
 @dataclass
 class PostInfo:
     name: str
-    date: str
+    date: datetime
     region: str
     photos: list[str]
     contacts: str
@@ -12,5 +13,5 @@ class PostInfo:
 
 @dataclass
 class SearchInfo:
-    date: str
+    date: datetime
     region: str
