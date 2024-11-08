@@ -25,9 +25,9 @@ class SearchForm(StatesGroup):
 
 
 async def start_search_session(message: types.Message, state: FSMContext):
+    logging.debug(f"starting search session for user with id {message.from_user.id}")
     await asyncio.sleep(0.4)
     await message.answer("Введите желаемую дату мероприятия.")
-    logging.info(f"Set date_question state for user with id {message.from_user.id}")
     await state.set_state(SearchForm.date_question)
 
 
@@ -63,9 +63,9 @@ async def process_region(message: types.Message, state: FSMContext):
 async def do_search(
     message: types.Message, state: FSMContext, date: datetime, region: str
 ) -> bool:
-    search_info = SearchInfo(date.strftime("%d.%m.%Y"), region)
+    search_info = SearchInfo(date, region)
     logging.debug(search_info)
-    posts = database.get_posts(SearchInfo(date.strftime("%d.%m.%Y"), region))
+    posts = database.get_posts(search_info)
     logging.debug(f"posts={posts}")
     if not posts:
         await message.answer(
@@ -83,16 +83,10 @@ async def do_search(
     )
 
     if post.photos:
-        # Создаем список InputMediaPhoto
-        # TODO: сделать нормально
         media = [
-            types.InputMediaPhoto(
-                media=types.URLInputFile(
-                    "https://upload.wikimedia.org/wikipedia/commons/d/dd/Atlantis_Kircher_Mundus_subterraneus_1678.jpg"
-                )
-            ),
+            types.InputMediaPhoto(media=types.URLInputFile(image_url))
+            for image_url in post.photos
         ]
-        # media = [types.InputMediaPhoto(media=types.URLInputFile(image_url)) for image_url in post.photos]
 
         # Добавляем текст к первой фотографии
         media[0].caption = text
