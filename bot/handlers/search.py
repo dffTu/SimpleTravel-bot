@@ -73,37 +73,38 @@ async def do_search(
         )
         return False
 
-    # TODO: support multiple posts
-    post = posts[0]
-    text = (
-        f"🌴 Название мероприятия: {post.name}\n"
-        f"📆 Дата: {post.date}\n"
-        f"📍 Место: {post.region}\n"
-        f"✉️ Контакт: {post.contacts}\n"
-    )
+    MAX_POSTS = 4
+    posts = posts[:MAX_POSTS]
+    for post in posts:
+        text = (
+            f"🌴 Название мероприятия: {post.name}\n"
+            f"📆 Дата: {post.date}\n"
+            f"📍 Место: {post.region}\n"
+            f"✉️ Контакт: {post.contacts}\n"
+        )
 
-    should_send_text = True
-    if post.photos:
-        should_send_text = False
-        media = [
-            types.InputMediaPhoto(media=types.URLInputFile(image_url))
-            for image_url in post.photos
-        ]
+        should_send_text = True
+        if post.photos:
+            should_send_text = False
+            media = [
+                types.InputMediaPhoto(media=types.URLInputFile(image_url))
+                for image_url in post.photos
+            ]
 
-        # Добавляем текст к первой фотографии
-        media[0].caption = text
-        media[0].parse_mode = "HTML"
+            # Добавляем текст к первой фотографии
+            media[0].caption = text
+            media[0].parse_mode = "HTML"
 
-        # Отправляем группу медиа
-        try:
-            await message.answer_media_group(media)
-        except (TelegramNetworkError, TelegramEntityTooLarge) as e:
-            logging.error(f"Error during uploading photos: {e.message}")
-            should_send_text = True
+            # Отправляем группу медиа
+            try:
+                await message.answer_media_group(media)
+            except (TelegramNetworkError, TelegramEntityTooLarge) as e:
+                logging.error(f"Error during uploading photos: {e.message}")
+                should_send_text = True
 
-    if should_send_text:
-        # Если фотографий нет или при их отправке произошла ошибка просто отправляем текст
-        await message.answer(text)
+        if should_send_text:
+            # Если фотографий нет или при их отправке произошла ошибка просто отправляем текст
+            await message.answer(text)
 
     # Отправляем клавиатуру в отдельном сообщении
     await message.answer("Что хотите делать дальше?", reply_markup=search_end_keybord)
