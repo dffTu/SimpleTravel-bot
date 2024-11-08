@@ -5,6 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from bot.handlers.search import start_search_session
+from bot.handlers.post import start_post_session
 
 search_button_text = "Искать мероприятия"
 post_button_text = "Разместить свое мероприятие"
@@ -60,5 +61,6 @@ async def post_activity(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer(),  # Убираем индикатор загрузки
     await callback.message.delete_reply_markup(),  # Убираем кнопки у сообщения
     await callback.message.answer(
-        "Отлично! Мы поможем вам разместить ваше мероприятие. (Пока все)"
+        "Отлично! Мы поможем вам разместить ваше мероприятие."
     ),
+    await start_post_session(callback.message, state)

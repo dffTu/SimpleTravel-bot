@@ -5,7 +5,7 @@ from aiogram import Router, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from dateutil import parser
-from bot.create_bot import database
+from bot.globals import database
 from bot.db.constants import SearchInfo
 from urllib.parse import urlencode
 
@@ -49,10 +49,9 @@ async def process_date(message: types.Message, state: FSMContext):
 
 @search_router.message(SearchForm.region_qestion)
 async def process_region(message: types.Message, state: FSMContext):
-    region = message.text
-    await state.update_data(region=region)
-
     data = await state.get_data()
+    data['region'] = message.text
+
     found_posts = await do_search(message, state, **data)
     if found_posts:
         await state.clear()
