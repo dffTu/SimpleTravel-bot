@@ -1,7 +1,7 @@
 import asyncio
-from create_bot import bot, dp
-from handlers.start import start_router
-from handlers.search import search_router
+from bot.create_bot import bot, dp
+from bot.handlers.start import start_router
+from bot.handlers.search import search_router
 
 
 async def main():

@@ -5,7 +5,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 from decouple import config
-from db.database_factory import create_database
+from bot.db.database_factory import create_database
 
 admins = [int(admin_id) for admin_id in config("ADMINS").split(",")]
 
