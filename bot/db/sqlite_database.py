@@ -42,8 +42,8 @@ class SQLiteDatabase(Database):
 
     def get_posts(self, info: SearchInfo) -> list[PostInfo]:
         self.cursor.execute(
-            "SELECT * FROM Posts WHERE region = ? AND date = ?",
-            (info.region, info.date),
+            "SELECT * FROM Posts WHERE region LIKE ? AND date = ?",
+            (info.region + '%', info.date),
         )
         posts = self.cursor.fetchall()
         posts = list(map(self.parse_post_info, posts))
