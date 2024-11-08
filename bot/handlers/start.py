@@ -41,6 +41,7 @@ start_markup = InlineKeyboardMarkup(inline_keyboard=start_buttons)
 
 @start_router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
+    await state.clear()
     await message.answer(welcome_message, reply_markup=start_markup)
 
 

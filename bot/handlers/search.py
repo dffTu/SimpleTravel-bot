@@ -2,6 +2,7 @@ import asyncio
 from datetime import datetime
 import logging
 from aiogram import Router, types
+from aiogram.exceptions import TelegramEntityTooLarge, TelegramNetworkError
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from dateutil import parser
@@ -50,7 +51,7 @@ async def process_date(message: types.Message, state: FSMContext):
 @search_router.message(SearchForm.region_qestion)
 async def process_region(message: types.Message, state: FSMContext):
     data = await state.get_data()
-    data['region'] = message.text
+    data["region"] = message.text
 
     found_posts = await do_search(message, state, **data)
     if found_posts:
@@ -81,7 +82,9 @@ async def do_search(
         f"✉️ Контакт: {post.contacts}\n"
     )
 
+    should_send_text = True
     if post.photos:
+        should_send_text = False
         media = [
             types.InputMediaPhoto(media=types.URLInputFile(image_url))
             for image_url in post.photos
@@ -92,9 +95,14 @@ async def do_search(
         media[0].parse_mode = "HTML"
 
         # Отправляем группу медиа
-        await message.answer_media_group(media)
-    else:
-        # Если фотографий нет, просто отправляем текст
+        try:
+            await message.answer_media_group(media)
+        except (TelegramNetworkError, TelegramEntityTooLarge) as e:
+            logging.error(f"Error during uploading photos: {e.message}")
+            should_send_text = True
+
+    if should_send_text:
+        # Если фотографий нет или при их отправке произошла ошибка просто отправляем текст
         await message.answer(text)
 
     # Отправляем клавиатуру в отдельном сообщении
