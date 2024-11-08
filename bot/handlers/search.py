@@ -7,6 +7,7 @@ from aiogram.fsm.state import State, StatesGroup
 from dateutil import parser
 from bot.create_bot import database
 from bot.db.constants import SearchInfo
+from urllib.parse import urlencode
 
 
 search_router = Router()
@@ -18,7 +19,7 @@ class SearchForm(StatesGroup):
 
 
 async def start_search_session(message: types.Message, state: FSMContext):
-    await asyncio.sleep(1.2)
+    await asyncio.sleep(0.5)
     await message.answer("Введите желаемую дату мероприятия.")
     logging.info(f"Set date_question state for user with id {message.from_user.id}")
     await state.set_state(SearchForm.date_question)
@@ -67,5 +68,28 @@ async def do_search(
         return False
     # TODO: support multiple posts
     post = posts[0]
-    await message.answer(str(post))
+    text = (
+        f"🌴 Название мероприятия: {post.name}\n"
+        f"📆 Дата: {post.date}\n"
+        f"📍 Место: {post.date}\n"
+        f"✉️ Контакт: {post.contacts}\n"
+    )
+
+    # Создаем список InputMediaPhoto
+    # TODO: сделать нормально
+    media = [
+        types.InputMediaPhoto(
+            media=types.URLInputFile(
+                "https://upload.wikimedia.org/wikipedia/commons/d/dd/Atlantis_Kircher_Mundus_subterraneus_1678.jpg"
+            )
+        )
+    ]
+    # media = [types.InputMediaPhoto(media=types.URLInputFile(image_url)) for image_url in post.photos]
+
+    # Добавляем текст к первой фотографии
+    media[0].caption = text
+    media[0].parse_mode = "HTML"
+
+    # Отправляем группу медиа
+    await message.answer_media_group(media)
     return True
