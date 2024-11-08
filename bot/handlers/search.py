@@ -17,7 +17,7 @@ class SearchForm(StatesGroup):
     region_qestion = State()
 
 
-async def startSearchSession(message: types.Message, state: FSMContext):
+async def start_search_session(message: types.Message, state: FSMContext):
     await asyncio.sleep(1.2)
     await message.answer("Введите желаемую дату мероприятия.")
     logging.info(f"Set date_question state for user with id {message.from_user.id}")
@@ -25,7 +25,7 @@ async def startSearchSession(message: types.Message, state: FSMContext):
 
 
 @search_router.message(SearchForm.date_question)
-async def processDate(message: types.Message, state: FSMContext):
+async def process_date(message: types.Message, state: FSMContext):
     date: datetime
     try:
         date = parser.parse(message.text)
@@ -41,25 +41,25 @@ async def processDate(message: types.Message, state: FSMContext):
 
 
 @search_router.message(SearchForm.region_qestion)
-async def processRegion(message: types.Message, state: FSMContext):
+async def process_region(message: types.Message, state: FSMContext):
     region = message.text
     await state.update_data(region=region)
 
     data = await state.get_data()
-    found_posts = await doSearch(message, state, **data)
+    found_posts = await do_search(message, state, **data)
     if found_posts:
         await state.clear()
     else:
-        await startSearchSession(message, state)
+        await start_search_session(message, state)
 
 
-async def doSearch(
+async def do_search(
     message: types.Message, state: FSMContext, date: datetime, region: str
 ) -> bool:
     search_info = SearchInfo(date.strftime("%d.%m.%Y"), region)
-    logging.debug(f"search_info=date:{search_info.date},region={search_info.region}")
+    logging.debug(search_info)
     posts = database.get_posts(SearchInfo(date.strftime("%d.%m.%Y"), region))
-    logging.debug(f"posts={str(posts)}")
+    logging.debug(f"posts={posts}")
     if not posts:
         await message.answer(
             "К сожалению, мы не нашли мероприятий, соответствующих вашим фильтрам. Попробуйте изменить параметры поиска или зайдите позже."

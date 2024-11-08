@@ -4,7 +4,7 @@ from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from bot.handlers.search import startSearchSession
+from bot.handlers.search import start_search_session
 
 search_button_text = "Искать мероприятия"
 post_button_text = "Разместить свое мероприятие"
@@ -51,7 +51,7 @@ async def search_activities(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.answer(
         "Прекрасно! Давайте найдем для вас что-то интересное..."
     ),
-    await startSearchSession(callback.message, state)
+    await start_search_session(callback.message, state)
 
 
 
