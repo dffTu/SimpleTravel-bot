@@ -7,8 +7,7 @@ from bot.db.constants import PostInfo, SearchInfo
 
 class SQLiteDatabase(Database):
     def __init__(self, path: str):
-        self.path = path
-        self.db = sqlite3.connect(self.path)
+        self.db = sqlite3.connect(path)
         self.cursor = self.db.cursor()
         self.cursor.execute(
             """
