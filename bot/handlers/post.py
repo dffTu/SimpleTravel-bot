@@ -98,5 +98,5 @@ async def do_post(
     photos: list[str],
     contacts: str,
 ):
-    post_info = constants.PostInfo(name, date, region, photos, contacts)
+    post_info = constants.PostInfo(message.chat.id, name, date, region, photos, contacts)
     return database.add_post(post_info)

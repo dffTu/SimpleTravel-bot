@@ -77,18 +77,18 @@ async def do_search(
     posts = posts[:MAX_POSTS]
     for post in posts:
         text = (
-            f"🌴 Название мероприятия: {post.name}\n"
-            f"📆 Дата: {post.date}\n"
-            f"📍 Место: {post.region}\n"
-            f"✉️ Контакт: {post.contacts}\n"
+            f"🌴 Название мероприятия: {post.info.name}\n"
+            f"📆 Дата: {post.info.date}\n"
+            f"📍 Место: {post.info.region}\n"
+            f"✉️ Контакт: {post.info.contacts}\n"
         )
 
         should_send_text = True
-        if post.photos:
+        if post.info.photos:
             should_send_text = False
             media = [
                 types.InputMediaPhoto(media=types.URLInputFile(image_url))
-                for image_url in post.photos
+                for image_url in post.info.photos
             ]
 
             # Добавляем текст к первой фотографии

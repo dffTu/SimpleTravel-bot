@@ -24,10 +24,12 @@ class SQLiteDatabase(Database):
         self.db.commit()
 
     def parse_post_info(self, value: tuple):
-        name, date, region, photos, contacts = value[1:]
+        post_id, author_id, name, date, region, photos, contacts = value
         date = datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
         photos = literal_eval(photos)
-        return constants.PostInfo(name, date, region, photos, contacts)
+        return constants.Post(
+            id=post_id,
+            info=constants.PostInfo(author_id, name, date, region, photos, contacts))
 
     def add_post(self, info: constants.PostInfo) -> bool:
         # TODO: handle exceptions
@@ -38,9 +40,9 @@ class SQLiteDatabase(Database):
         self.db.commit()
         return True
 
-    def get_posts(self, info: constants.SearchInfo) -> list[constants.PostInfo]:
+    def get_posts(self, info: constants.SearchInfo) -> list[constants.Post]:
         self.cursor.execute(
-            "SELECT * FROM Posts WHERE region LIKE ? AND date = ?",
+            "SELECT id, author_id, name, date, region, photos, contacts FROM Posts WHERE region LIKE ? AND date = ?",
             ('%' + info.region + '%', info.date),
         )
         posts = self.cursor.fetchall()
@@ -66,6 +68,44 @@ class SQLiteDatabase(Database):
         )
         self.db.commit()
         return True
+
+    def book_event(self, chat_id: int, post_id: int) -> bool:
+        if self.get_user(chat_id) is None:
+            return False
+        self.cursor.execute(
+            "SELECT * FROM Posts WHERE id = ?",
+            (post_id, )
+        )
+        post = self.cursor.fetchone()
+        if post is None:
+            return False
+        self.cursor.execute(
+            "INSERT INTO Bookings (post_id, user_id) VALUES (?, ?)",
+            (post_id, chat_id),
+        )
+        self.db.commit()
+        return True
+
+    def get_bookings_by_author(self, chat_id: int) -> list[constants.BookingInfo]:
+        self.cursor.execute(
+            """
+            SELECT b.post_id, b.user_id
+            FROM Bookings b
+            JOIN Posts p ON p.id = b.post_id
+            WHERE p.author_id = ?
+            """,
+            (chat_id,)
+        )
+        bookings = self.cursor.fetchall()
+        return [constants.BookingInfo(post_id, user_id) for (post_id, user_id) in bookings]
+
+    def get_bookings_by_client(self, chat_id: int) -> list[constants.BookingInfo]:
+        self.cursor.execute(
+            "SELECT post_id, user_id FROM Bookings WHERE user_id = ?",
+            (chat_id,)
+        )
+        bookings = self.cursor.fetchall()
+        return [constants.BookingInfo(post_id, user_id) for (post_id, user_id) in bookings]
 
     def __del__(self):
         self.db.close()

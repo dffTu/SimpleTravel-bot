@@ -24,3 +24,15 @@ class UserInfo:
     name: str
     phone_number: str
     email: str
+
+
+@dataclass
+class Post:
+    id: int
+    info: PostInfo
+
+
+@dataclass
+class BookingInfo:
+    post_id: int
+    user_id: int
