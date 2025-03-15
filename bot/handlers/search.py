@@ -38,7 +38,7 @@ async def process_date(message: types.Message, state: FSMContext):
     try:
         date = parser.parse(message.text)
     except ValueError:
-        message.answer(
+        await message.answer(
             "Не удалось распознать введенную дату. Попробуйте ввести в формате YYYY-MM-DD."
         )
         return
