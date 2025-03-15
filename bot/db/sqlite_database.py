@@ -3,6 +3,7 @@ import datetime
 from ast import literal_eval
 from bot.db.template_database import Database
 import bot.db.constants as constants
+from typing import Union
 
 
 class SQLiteDatabase(Database):
@@ -20,7 +21,18 @@ class SQLiteDatabase(Database):
             photos TEXT NOT NULL,
             contacts TEXT NOT NULL
             )
-        """
+            """
+        )
+
+        self.cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS Users (
+            chat_id INTEGER UNIQUE NOT NULL,
+            name TEXT NOT NULL,
+            phone_number TEXT NOT NULL,
+            email TEXT NOT NULL
+            )
+            """
         )
 
         # TODO: сделать индекс на столбцах по которым делаем select?
@@ -50,10 +62,24 @@ class SQLiteDatabase(Database):
         posts = list(map(self.parse_post_info, posts))
         return posts
 
-    def get_user(self, chat_id: int) -> bool:
-        return False
+    def get_user(self, chat_id: int) -> Union[None, constants.UserInfo]:
+        self.cursor.execute(
+            "SELECT chat_id, name, phone_number, email FROM Users WHERE chat_id = ?",
+            (chat_id,)
+        )
+        user = self.cursor.fetchone()
+        if user is None:
+            return None
+        return constants.UserInfo(chat_id=user[0], name=user[1], phone_number=user[2], email=user[3])
 
     def add_user(self, info: constants.UserInfo) -> bool:
+        if self.get_user(info.chat_id) is not None:
+            return False
+        self.cursor.execute(
+            "INSERT INTO Users (chat_id, name, phone_number, email) VALUES (?, ?, ?, ?)",
+            (info.chat_id, info.name, info.phone_number, info.email),
+        )
+        self.db.commit()
         return True
 
     def __del__(self):

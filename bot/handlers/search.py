@@ -7,7 +7,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from dateutil import parser
 from bot.globals import database
-from bot.db.constants import SearchInfo
+import bot.db.constants as constants
 from urllib.parse import urlencode
 
 
@@ -63,7 +63,7 @@ async def process_region(message: types.Message, state: FSMContext):
 async def do_search(
     message: types.Message, state: FSMContext, date: datetime, region: str
 ) -> bool:
-    search_info = SearchInfo(date, region)
+    search_info = constants.SearchInfo(date, region)
     logging.debug(search_info)
     posts = database.get_posts(search_info)
     logging.debug(f"posts={posts}")

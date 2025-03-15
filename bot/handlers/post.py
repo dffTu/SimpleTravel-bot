@@ -6,7 +6,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from dateutil import parser
 
-from bot.db.template_database import PostInfo
+import bot.db.constants as constants
 from bot.globals import database
 
 
@@ -98,5 +98,5 @@ async def do_post(
     photos: list[str],
     contacts: str,
 ):
-    post_info = PostInfo(name, date, region, photos, contacts)
+    post_info = constants.PostInfo(name, date, region, photos, contacts)
     return database.add_post(post_info)
