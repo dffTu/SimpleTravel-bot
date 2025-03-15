@@ -4,36 +4,21 @@ from ast import literal_eval
 from bot.db.template_database import Database
 import bot.db.constants as constants
 from typing import Union
+import os
+from pathlib import Path
 
 
 class SQLiteDatabase(Database):
     def __init__(self, path: str):
         self.db = sqlite3.connect(path)
         self.cursor = self.db.cursor()
-        self.cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS Posts (
-            id INTEGER PRIMARY KEY,
-            author_ID INTEGER NOT NULL,
-            name TEXT NOT NULL,
-            date TEXT NOT NULL,
-            region TEXT NOT NULL,
-            photos TEXT NOT NULL,
-            contacts TEXT NOT NULL
-            )
-            """
-        )
 
-        self.cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS Users (
-            chat_id INTEGER UNIQUE NOT NULL,
-            name TEXT NOT NULL,
-            phone_number TEXT NOT NULL,
-            email TEXT NOT NULL
-            )
-            """
-        )
+        scripts_path = Path(__file__).parent / "sql_scripts"
+        scripts = [os.path.join(dirpath, f) for (dirpath, _, filenames)
+                   in os.walk(scripts_path) for f in filenames]
+
+        for script in sorted(scripts):
+            self.cursor.execute(open(script, "r").read())
 
         # TODO: сделать индекс на столбцах по которым делаем select?
         self.db.commit()
