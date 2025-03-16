@@ -9,6 +9,9 @@ class Database:
     def get_posts(self, info: constants.SearchInfo) -> list[constants.Post]:
         pass
 
+    def get_posts_by_author(self, chat_id: int) -> list[constants.Post]:
+        pass
+
     def get_user(self, chat_id: int) -> Union[None, constants.UserInfo]:
         pass
 

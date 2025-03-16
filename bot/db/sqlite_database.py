@@ -61,6 +61,16 @@ class SQLiteDatabase(Database):
         posts = list(map(self.parse_post_info, posts))
         return posts
 
+    def get_posts_by_author(self, chat_id: int) -> list[constants.Post]:
+        self.cursor.execute(
+            "SELECT id, author_id, name, date, region, photos, contacts FROM Posts WHERE "
+            "author_id = ?",
+            (chat_id,)
+        )
+        posts = self.cursor.fetchall()
+        posts = list(map(self.parse_post_info, posts))
+        return posts
+
     def get_user(self, chat_id: int) -> Union[None, constants.UserInfo]:
         try:
             self.cursor.execute(
