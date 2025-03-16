@@ -133,4 +133,4 @@ async def handle_booking(callback_query: types.CallbackQuery):
     if success:
         await callback_query.answer("Вы успешно записались на мероприятие!")
     else:
-        await callback_query.answer("Произошла ошибка при записи на мероприятие. Попробуйте еще раз.")
+        await callback_query.answer("Вы уже записались на это мероприятие.")
