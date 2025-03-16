@@ -7,7 +7,7 @@ from pathlib import Path
 
 from bot.db.template_database import Database
 import bot.db.constants as constants
-from bot.utils import geolocations, text
+from bot.utils import geolocations_utils, text_utils, datetime_utils
 
 
 class SQLiteDatabase(Database):
@@ -19,8 +19,9 @@ class SQLiteDatabase(Database):
         scripts = [os.path.join(dirpath, f) for (dirpath, _, filenames)
                    in os.walk(scripts_path) for f in filenames]
 
-        self.db.create_function("getTextRatio", 2, text.get_text_ratio)
-        self.db.create_function("getDistance", 4, geolocations.get_distance)
+        self.db.create_function("getTextRatio", 2, text_utils.get_text_ratio)
+        self.db.create_function("getDistance", 4, geolocations_utils.get_distance)
+        self.db.create_function("insideInterval", 3, datetime_utils.is_date_inside_interval)
 
         for script in sorted(scripts):
             self.cursor.execute(open(script, "r").read())
@@ -38,7 +39,7 @@ class SQLiteDatabase(Database):
 
     def add_post(self, info: constants.PostInfo) -> bool:
         # TODO: handle exceptions
-        lat, lon = geolocations.get_coords(info.region)
+        lat, lon = geolocations_utils.get_coords(info.region)
         self.cursor.execute(
             "INSERT INTO Posts (author_id, name, date, region, photos, contacts, latitude, longitude)"
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -48,11 +49,13 @@ class SQLiteDatabase(Database):
         return True
 
     def get_posts(self, info: constants.SearchInfo) -> list[constants.Post]:
-        lat, lon = geolocations.get_coords(info.region)
+        lat, lon = geolocations_utils.get_coords(info.region)
         self.cursor.execute(
             "SELECT id, author_id, name, date, region, photos, contacts FROM Posts WHERE "
-            "getTextRatio(?, name) > 80 AND getDistance(?, ?, latitude, longitude) < ?",
-            (info.name, lat, lon, info.area_km),
+            "getTextRatio(?, name) > 80"
+            " AND getDistance(?, ?, latitude, longitude) < ?"
+            " AND insideInterval(date, ?, ?) = 1",
+            (info.name, lat, lon, info.area_km, info.date_start, info.date_end),
         )
         posts = self.cursor.fetchall()
         posts = list(map(self.parse_post_info, posts))

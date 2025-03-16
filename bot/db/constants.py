@@ -15,7 +15,8 @@ class PostInfo:
 @dataclass
 class SearchInfo:
     name: str = None
-    date: datetime = None
+    date_start: datetime = None
+    date_end: datetime = None
     region: str = None
     area_km: float = 10
 

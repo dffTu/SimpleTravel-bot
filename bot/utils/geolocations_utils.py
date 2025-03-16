@@ -1,6 +1,6 @@
 import geopy
 
-geolocator = geopy.geocoders.Yandex(api_key="730fa004-7e4f-47cb-83a9-39323fe6bf03")
+geolocator = geopy.geocoders.Nominatim(user_agent="simple_travel_bot")
 
 
 def get_distance(latitude1: float, longitude1: float, latitude2: float, longitude2: float) -> float:
