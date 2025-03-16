@@ -7,13 +7,13 @@ from aiogram.filters import Command, CommandStart
 
 from bot.db.template_database import Database
 from bot.db.constants import UserInfo, BookingInfo, Post
-from bot.handlers.start_entry import start_entry
+from bot.handlers.start_entry import back_to_start
 
 account_router = Router()
 
 view_subscriptions_text = "Посмотреть мои подписки"
 view_user_info_text = "Посмотреть информацию о пользователе"
-back_to_main_text = "Вернуться на главный экран"
+go_back_text = "Вернуться на главный экран"
 account_message = f"""
 👤 Личный кабинет
 
@@ -28,7 +28,7 @@ account_message = f"""
 account_buttons = [
     [InlineKeyboardButton(text=view_subscriptions_text, callback_data="view_subscriptions")],
     [InlineKeyboardButton(text=view_user_info_text, callback_data="view_user_info")],
-    [InlineKeyboardButton(text=back_to_main_text, callback_data="back_to_main")],
+    [InlineKeyboardButton(text=go_back_text, callback_data="go_back")],
 ]
 account_markup = InlineKeyboardMarkup(inline_keyboard=account_buttons)
 
@@ -92,10 +92,10 @@ async def view_user_info(callback: types.CallbackQuery, state: FSMContext):
 
 
 # Обработчик для кнопки "Вернуться на главный экран"
-@account_router.callback_query(F.data == "back_to_main")
-async def back_to_main(callback: types.CallbackQuery, state: FSMContext):
+@account_router.callback_query(F.data == "go_back")
+async def go_back(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.delete_reply_markup()
     # Здесь вы можете вызвать обработчик главного экрана
     # Например, если у вас есть функция cmd_start для главного экрана:
-    await start_entry(callback.message, state)
+    await back_to_start(callback.message, state)
     await callback.answer()
