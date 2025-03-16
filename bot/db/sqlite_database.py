@@ -62,14 +62,17 @@ class SQLiteDatabase(Database):
         return posts
 
     def get_user(self, chat_id: int) -> Union[None, constants.UserInfo]:
-        self.cursor.execute(
-            "SELECT chat_id, name, phone_number, email FROM Users WHERE chat_id = ?",
-            (chat_id,)
-        )
-        user = self.cursor.fetchone()
-        if user is None:
+        try:
+            self.cursor.execute(
+                "SELECT chat_id, name, phone_number, email FROM Users WHERE chat_id = ?",
+                (chat_id,)
+            )
+            user = self.cursor.fetchone()
+            if user is None:
+                return None
+            return constants.UserInfo(chat_id=user[0], name=user[1], phone_number=user[2], email=user[3])
+        except Exception:
             return None
-        return constants.UserInfo(chat_id=user[0], name=user[1], phone_number=user[2], email=user[3])
 
     def add_user(self, info: constants.UserInfo) -> bool:
         if self.get_user(info.chat_id) is not None:

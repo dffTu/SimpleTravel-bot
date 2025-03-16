@@ -1,6 +1,7 @@
-import geopy
+from geopy import geocoders
+from geopy import distance
 
-geolocator = geopy.geocoders.Nominatim(user_agent="simple_travel_bot")
+geolocator = geocoders.Nominatim(user_agent="simple_travel_bot")
 
 
 def get_distance(latitude1: float, longitude1: float, latitude2: float, longitude2: float) -> float:
@@ -8,7 +9,7 @@ def get_distance(latitude1: float, longitude1: float, latitude2: float, longitud
         return 0
     if None in [latitude2, longitude2]:
         return 10**9
-    return geopy.distance.geodesic((latitude1, longitude1), (latitude2, longitude2)).km
+    return distance.geodesic((latitude1, longitude1), (latitude2, longitude2)).km
 
 
 def get_coords(address: str) -> tuple:
