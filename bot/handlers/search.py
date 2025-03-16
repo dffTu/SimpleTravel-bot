@@ -83,6 +83,9 @@ async def do_search(
             f"✉️ Контакт: {post.info.contacts}\n"
         )
 
+        button = types.InlineKeyboardButton(text="Записаться", callback_data=f"book_event_{post.id}")
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[[button]])
+
         should_send_text = True
         if post.info.photos:
             should_send_text = False
@@ -95,16 +98,17 @@ async def do_search(
             media[0].caption = text
             media[0].parse_mode = "HTML"
 
-            # Отправляем группу медиа
+            # Отправляем группу медиа с кнопкой
             try:
                 await message.answer_media_group(media)
+                await message.answer("", reply_markup=keyboard)  # Отправляем кнопку отдельно
             except (TelegramNetworkError, TelegramEntityTooLarge) as e:
                 logging.error(f"Error during uploading photos: {e.message}")
                 should_send_text = True
 
         if should_send_text:
-            # Если фотографий нет или при их отправке произошла ошибка просто отправляем текст
-            await message.answer(text)
+            # Если фотографий нет или при их отправке произошла ошибка, просто отправляем текст с кнопкой
+            await message.answer(text, reply_markup=keyboard)
 
     # Отправляем клавиатуру в отдельном сообщении
     await message.answer("Что хотите делать дальше?", reply_markup=search_end_keybord)
@@ -118,3 +122,15 @@ async def process_search_more(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.delete_reply_markup(),  # Убираем кнопки у сообщения
     await callback.message.answer("Начинаем новый поиск...")
     await start_search_session(callback.message, state)
+
+
+@search_router.callback_query(lambda c: c.data and c.data.startswith('book_event_'))
+async def handle_booking(callback_query: types.CallbackQuery):
+    user_id = callback_query.from_user.id
+    post_id = int(callback_query.data.split('_')[2])  # Извлекаем ID поста из callback_data
+
+    success = database.book_event(user_id, post_id)
+    if success:
+        await callback_query.answer("Вы успешно записались на мероприятие!")
+    else:
+        await callback_query.answer("Произошла ошибка при записи на мероприятие. Попробуйте еще раз.")

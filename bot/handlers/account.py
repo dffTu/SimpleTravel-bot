@@ -44,8 +44,7 @@ async def start_account_session(message: Message, state: FSMContext):
 
 @account_router.message(Command("account"))
 async def cmd_account(message: Message, state: FSMContext):
-    await state.set_state(AccountState.MAIN)
-    await message.answer(account_message, reply_markup=account_markup)
+    await start_account_session(message, state)
 
 
 # Обработчик для кнопки "Посмотреть мои подписки"
