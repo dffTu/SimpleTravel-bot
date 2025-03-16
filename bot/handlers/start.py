@@ -1,67 +1,48 @@
 import asyncio
 from aiogram import Router, F, types
-from aiogram.filters import CommandStart, Command
+from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
+from aiogram.types import Message
 
 from bot.handlers.search import start_search_session
 from bot.handlers.post import start_post_session
-
-search_button_text = "Искать мероприятия"
-post_button_text = "Разместить свое мероприятие"
-welcome_message = f"""
-🌍 Добро пожаловать в SimpleTravel!
-
-Рады приветствовать вас в SimpleTravel — вашем универсальном помощнике для поиска, размещения и бронирования разнообразных активностей, включая туры, экскурсии, концерты и многое другое.
-
-🔍 Что мы предлагаем:
-
-- Поиск и Бронирование: Легко находите и бронируйте активности, которые вам интересны.
-- Размещение Ваших Активностей: У вас есть уникальное мероприятие? Разместите его у нас и привлекайте больше участников!
-- Разнообразие: Богатый выбор мероприятий и аттракций на любой вкус.
-- Удобная Фильтрация: Используйте наши фильтры, чтобы быстро и без лишних хлопот найти именно то, что вам нужно.
-
-❗ Как начать:
-
-1. {search_button_text}: Выберите эту опцию для просмотра и бронирования доступных активностей.
-
-2. {post_button_text}: Хотите разместить свое мероприятие? Выберите эту опцию, и мы поможем вам начать.
-
-Если у вас есть вопросы или нужна помощь, просто напишите нам — мы всегда рады помочь!
-"""
+from bot.handlers.account import start_account_session
+from bot.handlers.start_entry import start_entry
 
 start_router = Router()
 
-start_buttons = [
-    [InlineKeyboardButton(text=search_button_text, callback_data="start_search")],
-    [InlineKeyboardButton(text=post_button_text, callback_data="start_post")],
-]
-start_markup = InlineKeyboardMarkup(inline_keyboard=start_buttons)
 
 
 @start_router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
-    await state.clear()
-    await message.answer(welcome_message, reply_markup=start_markup)
+    await start_entry(message, state)
 
 
 # Обработчик для кнопки "Искать мероприятия"
 @start_router.callback_query(lambda c: c.data and c.data == "start_search")
 async def search_activities(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer(),  # Убираем индикатор загрузки
-    await callback.message.delete_reply_markup(),  # Убираем кнопки у сообщения
+    await callback.answer()  # Убираем индикатор загрузки
+    await callback.message.delete_reply_markup()  # Убираем кнопки у сообщения
     await callback.message.answer(
         "Прекрасно! Давайте найдем для вас что-то интересное..."
-    ),
+    )
     await start_search_session(callback.message, state)
 
 
 # Обработчик для кнопки "Разместить свое мероприятие"
 @start_router.callback_query(lambda c: c.data and c.data == "start_post")
 async def post_activity(callback: types.CallbackQuery, state: FSMContext):
-    await callback.answer(),  # Убираем индикатор загрузки
-    await callback.message.delete_reply_markup(),  # Убираем кнопки у сообщения
+    await callback.answer()  # Убираем индикатор загрузки
+    await callback.message.delete_reply_markup()  # Убираем кнопки у сообщения
     await callback.message.answer(
         "Отлично! Мы поможем вам разместить ваше мероприятие."
-    ),
+    )
     await start_post_session(callback.message, state)
+
+
+# Обработчик для кнопки "Личный кабинет"
+@start_router.callback_query(lambda c: c.data and c.data == "view_account")
+async def view_account(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await callback.message.delete_reply_markup()
+    await start_account_session(callback.message, state)

@@ -1,9 +1,12 @@
-from .post import post_router
 from .search import search_router
+from .post import post_router
 from .start import start_router
+from .account import account_router
 
-__all__ = (
-    "post_router",
-    "search_router",
-    "start_router",
-)
+# Экспортируем все роутеры
+__all__ = [
+    'search_router',
+    'post_router',
+    'start_router',
+    'account_router'
+]
