@@ -3,11 +3,10 @@ from aiogram import Router, types, F
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
-from aiogram.filters import Command, CommandStart
+from aiogram.filters import Command
 
-from bot.db.template_database import Database
-from bot.db.constants import UserInfo, BookingInfo, Post
 from bot.handlers.start_entry import back_to_start
+from bot.globals import database
 
 account_router = Router()
 
@@ -44,17 +43,15 @@ async def start_account_session(message: Message, state: FSMContext):
 
 @account_router.message(Command("account"))
 async def cmd_account(message: Message, state: FSMContext):
-    await state.set_state(AccountState.MAIN)
-    await message.answer(account_message, reply_markup=account_markup)
+    await start_account_session(message, state)
 
 
 # Обработчик для кнопки "Посмотреть мои подписки"
 @account_router.callback_query(F.data == "view_subscriptions")
 async def view_subscriptions(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(AccountState.VIEW_SUBSCRIPTIONS)
-    db = Database()
     user_id = callback.from_user.id
-    bookings = db.get_bookings_by_client(user_id)
+    bookings = database.get_bookings_by_client(user_id)
 
     if not bookings:
         message = await callback.message.answer("У вас нет подписок на мероприятия.")
@@ -71,9 +68,8 @@ async def view_subscriptions(callback: types.CallbackQuery, state: FSMContext):
 @account_router.callback_query(F.data == "view_user_info")
 async def view_user_info(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(AccountState.VIEW_USER_INFO)
-    db = Database()
     user_id = callback.from_user.id
-    user_info = db.get_user(user_id)
+    user_info = database.get_user(user_id)
 
     if not user_info:
         message = await callback.message.answer("Информация о пользователе не найдена.")

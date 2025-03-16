@@ -1,6 +1,7 @@
 import asyncio
 from datetime import datetime
 import logging
+from typing import Any, Dict
 from aiogram import Router, types
 from aiogram.exceptions import TelegramEntityTooLarge, TelegramNetworkError
 from aiogram.fsm.context import FSMContext
@@ -21,20 +22,45 @@ search_end_keybord = types.InlineKeyboardMarkup(
 
 
 class SearchForm(StatesGroup):
+    main_menu = State()
     date_question = State()
     region_qestion = State()
+
+async def update_markup(data: Dict[str, Any]):
+    if not 'answer_message' in data:
+        return
+    answer_message = data['answer_message']
+
+    date_button = types.InlineKeyboardButton(text=f"{'✅' if 'date' in data else '❌'}Дата: {data.get('date').date() if 'date' in data else 'Любая'}", callback_data="filter_date")
+    region_button = types.InlineKeyboardButton(text=f"{'✅' if 'region' in data else '❌'}Регион: {data.get("region") if 'region' in data else 'Любой'}", callback_data="filter_region")
+    markup = types.InlineKeyboardMarkup(inline_keyboard=[
+        [date_button, region_button],
+        [types.InlineKeyboardButton(text="Начать поиск", callback_data="do_search")],
+    ])
+
+
+    await answer_message.edit_reply_markup(reply_markup=markup)
 
 
 async def start_search_session(message: types.Message, state: FSMContext):
     logging.debug(f"starting search session for user with id {message.from_user.id}")
-    await asyncio.sleep(0.4)
-    await message.answer("Введите желаемую дату мероприятия.")
+    await state.clear()
+
+    answer = await message.answer("Выберите фильтры для поиска:")
+    data = await state.update_data(answer_message=answer)
+    await update_markup(data)
+    await state.set_state(SearchForm.main_menu)
+
+
+@search_router.callback_query(lambda c: c.data == 'filter_date')
+async def filter_date(callback_query: types.CallbackQuery, state: FSMContext):
+    await callback_query.answer()
+    await callback_query.message.answer("Введите желаемую дату мероприятия.")
     await state.set_state(SearchForm.date_question)
 
 
 @search_router.message(SearchForm.date_question)
 async def process_date(message: types.Message, state: FSMContext):
-    date: datetime
     try:
         date = parser.parse(message.text)
     except ValueError:
@@ -42,26 +68,37 @@ async def process_date(message: types.Message, state: FSMContext):
             "Не удалось распознать введенную дату. Попробуйте ввести в формате YYYY-MM-DD."
         )
         return
-    await state.update_data(date=date)
+    data = await state.update_data(date=date)
+    await update_markup(data)
+    await state.set_state(SearchForm.main_menu)
 
-    await message.answer("Введите желаемый регион мероприятия.")
+
+@search_router.callback_query(lambda c: c.data == 'filter_region')
+async def filter_region(callback_query: types.CallbackQuery, state: FSMContext):
+    await callback_query.answer()
+    await callback_query.message.answer("Введите желаемый регион мероприятия.")
     await state.set_state(SearchForm.region_qestion)
-
 
 @search_router.message(SearchForm.region_qestion)
 async def process_region(message: types.Message, state: FSMContext):
-    data = await state.get_data()
-    data["region"] = message.text
+    data = await state.update_data(region=message.text)
+    await update_markup(data)
+    await state.set_state(SearchForm.main_menu)
 
-    found_posts = await do_search(message, state, **data)
+
+@search_router.callback_query(lambda c: c.data == 'do_search')
+async def do_search(callback_query: types.CallbackQuery, state: FSMContext):
+    await callback_query.answer()
+    data = await state.get_data()
+    found_posts = await handle_search(callback_query.message, **data)
     if found_posts:
         await state.clear()
     else:
-        await start_search_session(message, state)
+        await start_search_session(callback_query.message, state)
 
 
-async def do_search(
-    message: types.Message, state: FSMContext, date: datetime, region: str
+async def handle_search(
+    message: types.Message, *, date: datetime | None = None, region: str | None = None, **kwargs
 ) -> bool:
     search_info = constants.SearchInfo(date, region)
     logging.debug(search_info)
@@ -83,6 +120,9 @@ async def do_search(
             f"✉️ Контакт: {post.info.contacts}\n"
         )
 
+        button = types.InlineKeyboardButton(text="Записаться", callback_data=f"book_event_{post.id}")
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=[[button]])
+
         should_send_text = True
         if post.info.photos:
             should_send_text = False
@@ -95,16 +135,17 @@ async def do_search(
             media[0].caption = text
             media[0].parse_mode = "HTML"
 
-            # Отправляем группу медиа
+            # Отправляем группу медиа с кнопкой
             try:
                 await message.answer_media_group(media)
+                await message.answer("", reply_markup=keyboard)  # Отправляем кнопку отдельно
             except (TelegramNetworkError, TelegramEntityTooLarge) as e:
                 logging.error(f"Error during uploading photos: {e.message}")
                 should_send_text = True
 
         if should_send_text:
-            # Если фотографий нет или при их отправке произошла ошибка просто отправляем текст
-            await message.answer(text)
+            # Если фотографий нет или при их отправке произошла ошибка, просто отправляем текст с кнопкой
+            await message.answer(text, reply_markup=keyboard)
 
     # Отправляем клавиатуру в отдельном сообщении
     await message.answer("Что хотите делать дальше?", reply_markup=search_end_keybord)
@@ -118,3 +159,15 @@ async def process_search_more(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.delete_reply_markup(),  # Убираем кнопки у сообщения
     await callback.message.answer("Начинаем новый поиск...")
     await start_search_session(callback.message, state)
+
+
+@search_router.callback_query(lambda c: c.data and c.data.startswith('book_event_'))
+async def handle_booking(callback_query: types.CallbackQuery):
+    user_id = callback_query.from_user.id
+    post_id = int(callback_query.data.split('_')[2])  # Извлекаем ID поста из callback_data
+
+    success = database.book_event(user_id, post_id)
+    if success:
+        await callback_query.answer("Вы успешно записались на мероприятие!")
+    else:
+        await callback_query.answer("Вы уже записались на это мероприятие.")
