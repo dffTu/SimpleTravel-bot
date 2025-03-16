@@ -5,5 +5,7 @@ CREATE TABLE IF NOT EXISTS Posts (
     date TEXT NOT NULL,
     region TEXT NOT NULL,
     photos TEXT NOT NULL,
-    contacts TEXT NOT NULL
+    contacts TEXT NOT NULL,
+    latitude REAL,
+    longitude REAL
 )
