@@ -1,11 +1,13 @@
 import sqlite3
 import datetime
 from ast import literal_eval
-from bot.db.template_database import Database
-import bot.db.constants as constants
 from typing import Union
 import os
 from pathlib import Path
+
+from bot.db.template_database import Database
+import bot.db.constants as constants
+from bot.utils import geolocations, text
 
 
 class SQLiteDatabase(Database):
@@ -16,6 +18,9 @@ class SQLiteDatabase(Database):
         scripts_path = Path(__file__).parent / "sql_scripts"
         scripts = [os.path.join(dirpath, f) for (dirpath, _, filenames)
                    in os.walk(scripts_path) for f in filenames]
+
+        self.db.create_function("getTextRatio", 2, text.get_text_ratio)
+        self.db.create_function("getDistance", 4, geolocations.get_distance)
 
         for script in sorted(scripts):
             self.cursor.execute(open(script, "r").read())
@@ -33,17 +38,21 @@ class SQLiteDatabase(Database):
 
     def add_post(self, info: constants.PostInfo) -> bool:
         # TODO: handle exceptions
+        lat, lon = geolocations.get_coords(info.region)
         self.cursor.execute(
-            "INSERT INTO Posts (author_id, name, date, region, photos, contacts) VALUES (?, ?, ?, ?, ?, ?)",
-            (info.author_id, info.name, str(info.date), info.region, str(info.photos), info.contacts),
+            "INSERT INTO Posts (author_id, name, date, region, photos, contacts, latitude, longitude)"
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (info.author_id, info.name, str(info.date), info.region, str(info.photos), info.contacts, lat, lon),
         )
         self.db.commit()
         return True
 
     def get_posts(self, info: constants.SearchInfo) -> list[constants.Post]:
+        lat, lon = geolocations.get_coords(info.region)
         self.cursor.execute(
-            "SELECT id, author_id, name, date, region, photos, contacts FROM Posts WHERE region LIKE ? AND date = ?",
-            ('%' + info.region + '%', info.date),
+            "SELECT id, author_id, name, date, region, photos, contacts FROM Posts WHERE "
+            "getTextRatio(?, name) > 80 AND getDistance(?, ?, latitude, longitude) < ?",
+            (info.name, lat, lon, info.area_km),
         )
         posts = self.cursor.fetchall()
         posts = list(map(self.parse_post_info, posts))
