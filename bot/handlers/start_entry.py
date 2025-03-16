@@ -37,6 +37,11 @@ start_buttons = [
 start_markup = InlineKeyboardMarkup(inline_keyboard=start_buttons)
 
 
+async def back_to_start(message: Message, state: FSMContext):
+    await state.clear()
+    await message.edit_reply_markup(reply_markup=start_markup)
+
+
 async def start_entry(message: Message, state: FSMContext):
     await state.clear()
     await message.answer(welcome_message, reply_markup=start_markup)

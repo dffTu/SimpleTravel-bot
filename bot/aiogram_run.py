@@ -13,6 +13,7 @@ async def main():
     dp.include_router(handlers.search_router)
     dp.include_router(handlers.post_router)
     dp.include_router(handlers.account_router)
+    dp.include_router(handlers.register_router)
 
     # Пропускаем накопившиеся апдейты и запускаем polling
     await bot.delete_webhook(drop_pending_updates=True)

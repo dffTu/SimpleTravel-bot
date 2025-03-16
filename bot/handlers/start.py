@@ -4,10 +4,11 @@ from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
+from bot.handlers.register import check_registration, start_register_session
 from bot.handlers.search import start_search_session
 from bot.handlers.post import start_post_session
 from bot.handlers.account import start_account_session
-from bot.handlers.start_entry import start_entry
+from bot.handlers.start_entry import back_to_start, start_entry
 
 start_router = Router()
 
@@ -16,6 +17,9 @@ start_router = Router()
 @start_router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
     await start_entry(message, state)
+    is_registered = await check_registration(message)
+    if not is_registered:
+        await start_register_session(message, state)
 
 
 # Обработчик для кнопки "Искать мероприятия"
