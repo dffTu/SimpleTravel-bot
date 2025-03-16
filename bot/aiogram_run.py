@@ -1,24 +1,21 @@
 import asyncio
-from aiogram.types import BotCommand
-
-from bot.globals import bot, dp
+import logging
 import bot.handlers as handlers
+from bot.globals import bot, dp
 
-routers = [
-    handlers.start_router,
-    handlers.post_router,
-    handlers.search_router
-]
-
-commands = [
-    BotCommand(command='start', description='Перейти к главному меню бота')
-]
+# Включаем логирование
+logging.basicConfig(level=logging.INFO)
 
 
 async def main():
-    dp.include_routers(*routers)
+    # Регистрируем роутеры
+    dp.include_router(handlers.start_router)
+    dp.include_router(handlers.search_router)
+    dp.include_router(handlers.post_router)
+    dp.include_router(handlers.account_router)
+
+    # Пропускаем накопившиеся апдейты и запускаем polling
     await bot.delete_webhook(drop_pending_updates=True)
-    await bot.set_my_commands(commands, language_code='ru')
     await dp.start_polling(bot)
 
 
