@@ -11,12 +11,15 @@ from bot.globals import database
 import bot.db.constants as constants
 from urllib.parse import urlencode
 
+from bot.handlers.start_entry import back_to_start
+
 
 search_router = Router()
 
 search_end_keybord = types.InlineKeyboardMarkup(
     inline_keyboard=[
-        [types.InlineKeyboardButton(text="Искать еще", callback_data="search_more")]
+        [types.InlineKeyboardButton(text="Искать еще", callback_data="search_more")],
+        [types.InlineKeyboardButton(text="Вернуться на главный экран", callback_data="go_back")]
     ]
 )
 
@@ -36,6 +39,7 @@ async def update_markup(data: Dict[str, Any]):
     markup = types.InlineKeyboardMarkup(inline_keyboard=[
         [date_button, region_button],
         [types.InlineKeyboardButton(text="Начать поиск", callback_data="do_search")],
+        [types.InlineKeyboardButton(text="Вернуться на главный экран", callback_data="go_back")]
     ])
 
 
@@ -171,3 +175,10 @@ async def handle_booking(callback_query: types.CallbackQuery):
         await callback_query.answer("Вы успешно записались на мероприятие!")
     else:
         await callback_query.answer("Вы уже записались на это мероприятие.")
+
+
+@search_router.callback_query(lambda c: c.data == 'go_back')
+async def go_back(callback: types.CallbackQuery, state: FSMContext):
+    await callback.message.delete_reply_markup()
+    await back_to_start(callback.message, state)
+    await callback.answer()
