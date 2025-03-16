@@ -39,9 +39,9 @@ async def update_markup(data: Dict[str, Any]):
 
     date_start_button = types.InlineKeyboardButton(text=f"{'✅' if 'date_start' in data else '❌'}Дата начала: {data.get('date_start').date() if 'date_start' in data else 'Любая'}", callback_data="filter_date_start")
     date_end_button = types.InlineKeyboardButton(text=f"{'✅' if 'date_end' in data else '❌'}Дата окончания: {data.get('date_end').date() if 'date_end' in data else 'Любая'}", callback_data="filter_date_end")
-    region_button = types.InlineKeyboardButton(text=f"{'✅' if 'region' in data else '❌'}Регион: {data.get("region") if 'region' in data else 'Любой'}", callback_data="filter_region")
-    area_button = types.InlineKeyboardButton(text=f"{'✅' if 'area_km' in data else '❌'}Расстояние: {data.get("area_km") if 'area_km' in data else 'Любое'}", callback_data="filter_area")
-    name_button = types.InlineKeyboardButton(text=f"{'✅' if 'name' in data else '❌'}Название мероприятия: {data.get("name") if 'name' in data else 'Любое'}", callback_data="filter_name")
+    region_button = types.InlineKeyboardButton(text=f"{'✅' if 'region' in data else '❌'}Регион: {data.get('region', 'Любой')}", callback_data="filter_region")
+    area_button = types.InlineKeyboardButton(text=f"{'✅' if 'area_km' in data else '❌'}Расстояние: {data.get('area_km', 'Любое')}", callback_data="filter_area")
+    name_button = types.InlineKeyboardButton(text=f"{'✅' if 'name' in data else '❌'}Название мероприятия: {data.get('name', 'Любое')}", callback_data="filter_name")
 
     markup = types.InlineKeyboardMarkup(inline_keyboard=[
         [name_button],

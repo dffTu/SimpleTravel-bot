@@ -50,7 +50,8 @@ async def process_email(message: Message, state: FSMContext):
         chat_id=message.from_user.id,
         name=data["name"],
         phone_number=data["phone"],
-        email=data["email"]
+        email=data["email"],
+        is_moderator=False
     )
     is_added = database.add_user(user_info)
     if is_added:
