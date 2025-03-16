@@ -111,6 +111,13 @@ class SQLiteDatabase(Database):
         if post is None:
             return False
         self.cursor.execute(
+            "SELECT * FROM Bookings WHERE post_id = ? AND user_id = ?",
+            (post_id, chat_id)
+        )
+        bookings = self.cursor.fetchall()
+        if len(bookings) > 0:
+            return False
+        self.cursor.execute(
             "INSERT INTO Bookings (post_id, user_id) VALUES (?, ?)",
             (post_id, chat_id),
         )
