@@ -26,18 +26,27 @@ search_end_keybord = types.InlineKeyboardMarkup(
 
 class SearchForm(StatesGroup):
     main_menu = State()
-    date_question = State()
+    date_start_question = State()
+    date_end_question = State()
     region_qestion = State()
+    area_question = State()
+    name_question = State()
 
 async def update_markup(data: Dict[str, Any]):
     if not 'answer_message' in data:
         return
     answer_message = data['answer_message']
 
-    date_button = types.InlineKeyboardButton(text=f"{'✅' if 'date' in data else '❌'}Дата: {data.get('date').date() if 'date' in data else 'Любая'}", callback_data="filter_date")
+    date_start_button = types.InlineKeyboardButton(text=f"{'✅' if 'date_start' in data else '❌'}Дата начала: {data.get('date_start').date() if 'date_start' in data else 'Любая'}", callback_data="filter_date_start")
+    date_end_button = types.InlineKeyboardButton(text=f"{'✅' if 'date_end' in data else '❌'}Дата окончания: {data.get('date_end').date() if 'date_end' in data else 'Любая'}", callback_data="filter_date_end")
     region_button = types.InlineKeyboardButton(text=f"{'✅' if 'region' in data else '❌'}Регион: {data.get("region") if 'region' in data else 'Любой'}", callback_data="filter_region")
+    area_button = types.InlineKeyboardButton(text=f"{'✅' if 'area_km' in data else '❌'}Расстояние: {data.get("area_km") if 'area_km' in data else 'Любое'}", callback_data="filter_area")
+    name_button = types.InlineKeyboardButton(text=f"{'✅' if 'name' in data else '❌'}Название мероприятия: {data.get("name") if 'name' in data else 'Любое'}", callback_data="filter_name")
+
     markup = types.InlineKeyboardMarkup(inline_keyboard=[
-        [date_button, region_button],
+        [name_button],
+        [date_start_button, date_end_button],
+        [region_button, area_button],
         [types.InlineKeyboardButton(text="Начать поиск", callback_data="do_search")],
         [types.InlineKeyboardButton(text="Вернуться на главный экран", callback_data="go_back")]
     ])
@@ -56,23 +65,44 @@ async def start_search_session(message: types.Message, state: FSMContext):
     await state.set_state(SearchForm.main_menu)
 
 
-@search_router.callback_query(lambda c: c.data == 'filter_date')
-async def filter_date(callback_query: types.CallbackQuery, state: FSMContext):
+@search_router.callback_query(lambda c: c.data == 'filter_date_start')
+async def filter_date_start(callback_query: types.CallbackQuery, state: FSMContext):
     await callback_query.answer()
-    await callback_query.message.answer("Введите желаемую дату мероприятия.")
-    await state.set_state(SearchForm.date_question)
+    await callback_query.message.answer("Введите желаемую дату начала мероприятия.")
+    await state.set_state(SearchForm.date_start_question)
 
 
-@search_router.message(SearchForm.date_question)
-async def process_date(message: types.Message, state: FSMContext):
+@search_router.message(SearchForm.date_start_question)
+async def process_date_start(message: types.Message, state: FSMContext):
     try:
-        date = parser.parse(message.text)
+        date_start = parser.parse(message.text)
     except ValueError:
         await message.answer(
             "Не удалось распознать введенную дату. Попробуйте ввести в формате YYYY-MM-DD."
         )
         return
-    data = await state.update_data(date=date)
+    data = await state.update_data(date_start=date_start)
+    await update_markup(data)
+    await state.set_state(SearchForm.main_menu)
+
+
+@search_router.callback_query(lambda c: c.data == 'filter_date_end')
+async def filter_date_end(callback_query: types.CallbackQuery, state: FSMContext):
+    await callback_query.answer()
+    await callback_query.message.answer("Введите желаемую дату окончания мероприятия.")
+    await state.set_state(SearchForm.date_end_question)
+
+
+@search_router.message(SearchForm.date_end_question)
+async def process_date_end(message: types.Message, state: FSMContext):
+    try:
+        date_end = parser.parse(message.text)
+    except ValueError:
+        await message.answer(
+            "Не удалось распознать введенную дату. Попробуйте ввести в формате YYYY-MM-DD."
+        )
+        return
+    data = await state.update_data(date_end=date_end)
     await update_markup(data)
     await state.set_state(SearchForm.main_menu)
 
@@ -90,6 +120,36 @@ async def process_region(message: types.Message, state: FSMContext):
     await state.set_state(SearchForm.main_menu)
 
 
+@search_router.callback_query(lambda c: c.data == 'filter_area')
+async def filter_area(callback_query: types.CallbackQuery, state: FSMContext):
+    await callback_query.answer()
+    await callback_query.message.answer("Введите желаемый радиус поиска в километрах.")
+    await state.set_state(SearchForm.area_question)
+
+@search_router.message(SearchForm.area_question)
+async def process_area(message: types.Message, state: FSMContext):
+    try:
+        area_km = float(message.text)
+    except ValueError:
+        await message.answer("Не удалось распознать введенное значение. Попробуйте ввести число.")
+        return
+    data = await state.update_data(area_km=area_km)
+    await update_markup(data)
+    await state.set_state(SearchForm.main_menu)
+
+@search_router.callback_query(lambda c: c.data == 'filter_name')
+async def filter_name(callback_query: types.CallbackQuery, state: FSMContext):
+    await callback_query.answer()
+    await callback_query.message.answer("Введите желаемое название мероприятия.")
+    await state.set_state(SearchForm.name_question)
+
+@search_router.message(SearchForm.name_question)
+async def process_name(message: types.Message, state: FSMContext):
+    data = await state.update_data(name=message.text)
+    await update_markup(data)
+    await state.set_state(SearchForm.main_menu)
+
+
 @search_router.callback_query(lambda c: c.data == 'do_search')
 async def do_search(callback_query: types.CallbackQuery, state: FSMContext):
     await callback_query.answer()
@@ -102,12 +162,17 @@ async def do_search(callback_query: types.CallbackQuery, state: FSMContext):
 
 
 async def handle_search(
-    message: types.Message, *, date: datetime | None = None, region: str | None = None, **kwargs
+    message: types.Message, **kwargs
 ) -> bool:
-    search_info = constants.SearchInfo(date, region)
-    logging.debug(search_info)
+    params = {}
+    for key in ['name', 'date_start', 'date_end', 'region', 'area_km']:
+        if key in kwargs:
+            params[key] = kwargs.get(key)
+    logging.debug(f'params={params}')
+    search_info = constants.SearchInfo(**params)
+    logging.debug(f'search_info={search_info}')
     posts = database.get_posts(search_info)
-    logging.debug(f"posts={posts}")
+    logging.debug(f'posts={posts}')
     if not posts:
         await message.answer(
             "К сожалению, мы не нашли мероприятий, соответствующих вашим фильтрам. Попробуйте изменить параметры поиска или зайдите позже."
