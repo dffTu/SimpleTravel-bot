@@ -7,5 +7,6 @@ CREATE TABLE IF NOT EXISTS Posts (
     photos TEXT NOT NULL,
     contacts TEXT NOT NULL,
     latitude REAL,
-    longitude REAL
+    longitude REAL,
+    is_on_review INTEGER NOT NULL DEFAULT 1
 )

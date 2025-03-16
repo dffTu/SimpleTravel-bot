@@ -27,11 +27,13 @@ class UserInfo:
     name: str
     phone_number: str
     email: str
+    is_moderator: bool
 
 
 @dataclass
 class Post:
     id: int
+    is_on_review: bool
     info: PostInfo
 
 

@@ -30,11 +30,12 @@ class SQLiteDatabase(Database):
         self.db.commit()
 
     def parse_post_info(self, value: tuple):
-        post_id, author_id, name, date, region, photos, contacts = value
+        post_id, author_id, name, date, region, photos, contacts, is_on_review = value
         date = datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
         photos = literal_eval(photos)
         return constants.Post(
             id=post_id,
+            is_on_review=is_on_review,
             info=constants.PostInfo(author_id, name, date, region, photos, contacts))
 
     def add_post(self, info: constants.PostInfo) -> bool:
@@ -51,7 +52,7 @@ class SQLiteDatabase(Database):
     def get_posts(self, info: constants.SearchInfo) -> list[constants.Post]:
         lat, lon = geolocations_utils.get_coords(info.region)
         self.cursor.execute(
-            "SELECT id, author_id, name, date, region, photos, contacts FROM Posts WHERE "
+            "SELECT id, author_id, name, date, region, photos, contacts, is_on_review FROM Posts WHERE "
             "getTextRatio(?, name) > 80"
             " AND getDistance(?, ?, latitude, longitude) < ?"
             " AND insideInterval(date, ?, ?) = 1",
@@ -63,7 +64,7 @@ class SQLiteDatabase(Database):
 
     def get_posts_by_author(self, chat_id: int) -> list[constants.Post]:
         self.cursor.execute(
-            "SELECT id, author_id, name, date, region, photos, contacts FROM Posts WHERE "
+            "SELECT id, author_id, name, date, region, photos, contacts, is_on_review FROM Posts WHERE "
             "author_id = ?",
             (chat_id,)
         )
@@ -74,13 +75,18 @@ class SQLiteDatabase(Database):
     def get_user(self, chat_id: int) -> Union[None, constants.UserInfo]:
         try:
             self.cursor.execute(
-                "SELECT chat_id, name, phone_number, email FROM Users WHERE chat_id = ?",
+                "SELECT chat_id, name, phone_number, email, is_moderator FROM Users WHERE chat_id = ?",
                 (chat_id,)
             )
             user = self.cursor.fetchone()
             if user is None:
                 return None
-            return constants.UserInfo(chat_id=user[0], name=user[1], phone_number=user[2], email=user[3])
+            return constants.UserInfo(
+                chat_id=user[0],
+                name=user[1],
+                phone_number=user[2],
+                email=user[3],
+                is_moderator=bool(user[4]))
         except Exception:
             return None
 
@@ -127,7 +133,7 @@ class SQLiteDatabase(Database):
     def get_bookings_by_client(self, chat_id: int) -> list[constants.Post]:
         self.cursor.execute(
             """
-            SELECT p.id, p.author_id, p.name, p.date, p.region, p.photos, p.contacts
+            SELECT p.id, p.author_id, p.name, p.date, p.region, p.photos, p.contacts, p.is_on_review
             FROM Bookings b
             JOIN Posts p ON p.id = b.post_id
             WHERE b.user_id = ?
