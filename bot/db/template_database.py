@@ -21,5 +21,5 @@ class Database:
     def get_bookings_by_author(self, chat_id: int) -> list[constants.BookingInfo]:
         pass
 
-    def get_bookings_by_client(self, chat_id: int) -> list[constants.BookingInfo]:
+    def get_bookings_by_client(self, chat_id: int) -> list[constants.Post]:
         pass

@@ -111,13 +111,19 @@ class SQLiteDatabase(Database):
         bookings = self.cursor.fetchall()
         return [constants.BookingInfo(post_id, user_id) for (post_id, user_id) in bookings]
 
-    def get_bookings_by_client(self, chat_id: int) -> list[constants.BookingInfo]:
+    def get_bookings_by_client(self, chat_id: int) -> list[constants.Post]:
         self.cursor.execute(
-            "SELECT post_id, user_id FROM Bookings WHERE user_id = ?",
+            """
+            SELECT p.id, p.author_id, p.name, p.date, p.region, p.photos, p.contacts
+            FROM Bookings b
+            JOIN Posts p ON p.id = b.post_id
+            WHERE b.user_id = ?
+            """,
             (chat_id,)
         )
-        bookings = self.cursor.fetchall()
-        return [constants.BookingInfo(post_id, user_id) for (post_id, user_id) in bookings]
+        posts = self.cursor.fetchall()
+        posts = list(map(self.parse_post_info, posts))
+        return posts
 
     def __del__(self):
         self.db.close()
