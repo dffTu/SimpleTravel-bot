@@ -49,14 +49,22 @@ class SQLiteDatabase(Database):
         self.db.commit()
         return True
 
-    def approve_post(self, post_id: int) -> None:
+    def approve_post(self, approver_id: int, post_id: int) -> None:
+        user = self.get_user(approver_id)
+        if user is None or not user.is_moderator:
+            return
+
         self.cursor.execute(
             "UPDATE Posts SET is_on_review = 0 WHERE id = ?",
             (post_id, ),
         )
         self.db.commit()
 
-    def get_posts_on_review(self) -> list[constants.Post]:
+    def get_posts_on_review(self, user_id: int) -> list[constants.Post]:
+        user = self.get_user(user_id)
+        if user is None or not user.is_moderator:
+            return []
+
         self.cursor.execute(
             "SELECT id, author_id, name, date, region, photos, contacts, is_on_review FROM Posts WHERE "
             "is_on_review = 1"

@@ -6,10 +6,10 @@ class Database:
     def add_post(self, info: constants.PostInfo) -> bool:
         pass
 
-    def approve_post(self, post_id: int) -> None:
+    def approve_post(self, approver_id: int, post_id: int) -> None:
         pass
 
-    def get_posts_on_review(self) -> list[constants.Post]:
+    def get_posts_on_review(self, user_id: int) -> list[constants.Post]:
         pass
 
     def get_posts(self, info: constants.SearchInfo) -> list[constants.Post]:
