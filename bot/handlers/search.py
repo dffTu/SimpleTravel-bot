@@ -171,7 +171,7 @@ async def handle_search(
     logging.debug(f'params={params}')
     search_info = constants.SearchInfo(**params)
     logging.debug(f'search_info={search_info}')
-    posts = database.get_posts(search_info)
+    posts = database.search_posts(search_info)
     logging.debug(f'posts={posts}')
     if not posts:
         await message.answer(

@@ -12,7 +12,7 @@ class Database:
     def get_posts_on_review(self, user_id: int) -> list[constants.Post]:
         pass
 
-    def get_posts(self, info: constants.SearchInfo) -> list[constants.Post]:
+    def search_posts(self, info: constants.SearchInfo) -> list[constants.Post]:
         pass
 
     def get_posts_by_author(self, chat_id: int) -> list[constants.Post]:

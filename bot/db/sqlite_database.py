@@ -73,7 +73,7 @@ class SQLiteDatabase(Database):
         posts = list(map(self.parse_post_info, posts))
         return posts
 
-    def get_posts(self, info: constants.SearchInfo) -> list[constants.Post]:
+    def search_posts(self, info: constants.SearchInfo) -> list[constants.Post]:
         lat, lon = geolocations_utils.get_coords(info.region)
         self.cursor.execute(
             "SELECT id, author_id, name, date, region, photos, contacts, is_on_review FROM Posts WHERE "
