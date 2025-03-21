@@ -12,21 +12,18 @@ account_router = Router()
 
 view_subscriptions_text = "Посмотреть мои подписки"
 view_user_info_text = "Посмотреть информацию о пользователе"
+view_posts_text = "Посмотреть мои посты"
 go_back_text = "Вернуться на главный экран"
 account_message = f"""
 👤 Личный кабинет
 
-Здесь вы можете управлять своими подписками и просматривать информацию о пользователе.
-
-🔍 Доступные опции:
-
-1. {view_subscriptions_text}: Просмотр ваших подписок на мероприятия.
-2. {view_user_info_text}: Просмотр информации о вашем аккаунте.
+Здесь вы можете просматривать информацию о пользователе и своих постах.
 """
 
 account_buttons = [
     [InlineKeyboardButton(text=view_subscriptions_text, callback_data="view_subscriptions")],
     [InlineKeyboardButton(text=view_user_info_text, callback_data="view_user_info")],
+    [InlineKeyboardButton(text=view_posts_text, callback_data="view_posts")],
     [InlineKeyboardButton(text=go_back_text, callback_data="go_back")],
 ]
 account_markup = InlineKeyboardMarkup(inline_keyboard=account_buttons)
@@ -35,6 +32,7 @@ class AccountState(StatesGroup):
     MAIN = State()
     VIEW_SUBSCRIPTIONS = State()
     VIEW_USER_INFO = State()
+    VIEW_POSTS = State()
 
 async def start_account_session(message: Message, state: FSMContext):
     await state.set_state(AccountState.MAIN)
@@ -86,6 +84,22 @@ async def view_user_info(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
     await callback.message.delete_reply_markup()
 
+
+@account_router.callback_query(F.data == "view_posts")
+async def view_posts(callback: types.CallbackQuery, state: FSMContext):
+    await state.set_state(AccountState.VIEW_POSTS)
+    user_id = callback.from_user.id
+    bookings = database.get_posts_by_author(user_id)
+
+    if not bookings:
+        message = await callback.message.answer("У вас нет постов.")
+    else:
+        posts = "\n".join([f"Мероприятие ID: {booking.post_id}" for booking in bookings])
+        message = await callback.message.answer(f"Ваши посты:\n{posts}")
+
+    await message.edit_reply_markup(reply_markup=account_markup)
+    await callback.answer()
+    await callback.message.delete_reply_markup()
 
 # Обработчик для кнопки "Вернуться на главный экран"
 @account_router.callback_query(F.data == "go_back")
