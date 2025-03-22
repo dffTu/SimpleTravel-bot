@@ -2,12 +2,16 @@ import asyncio
 import logging
 import bot.handlers as handlers
 from bot.globals import bot, dp
+from bot.handlers.middlewares.login import UserMiddleware
 
 # Включаем логирование
 logging.basicConfig(level=logging.INFO)
 
 
 async def main():
+    # Регистрируем middleware
+    dp.update.middleware(UserMiddleware())
+
     # Регистрируем роутеры
     dp.include_router(handlers.start_router)
     dp.include_router(handlers.search_router)
