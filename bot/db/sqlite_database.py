@@ -49,11 +49,36 @@ class SQLiteDatabase(Database):
         self.db.commit()
         return True
 
-    def get_posts(self, info: constants.SearchInfo) -> list[constants.Post]:
+    def approve_post(self, approver_id: int, post_id: int) -> None:
+        user = self.get_user(approver_id)
+        if user is None or not user.is_moderator:
+            return
+
+        self.cursor.execute(
+            "UPDATE Posts SET is_on_review = 0 WHERE id = ?",
+            (post_id, ),
+        )
+        self.db.commit()
+
+    def get_posts_on_review(self, user_id: int) -> list[constants.Post]:
+        user = self.get_user(user_id)
+        if user is None or not user.is_moderator:
+            return []
+
+        self.cursor.execute(
+            "SELECT id, author_id, name, date, region, photos, contacts, is_on_review FROM Posts WHERE "
+            "is_on_review = 1"
+        )
+        posts = self.cursor.fetchall()
+        posts = list(map(self.parse_post_info, posts))
+        return posts
+
+    def search_posts(self, info: constants.SearchInfo) -> list[constants.Post]:
         lat, lon = geolocations_utils.get_coords(info.region)
         self.cursor.execute(
             "SELECT id, author_id, name, date, region, photos, contacts, is_on_review FROM Posts WHERE "
-            "getTextRatio(?, name) > 80"
+            "is_on_review = 0"
+            " AND getTextRatio(?, name) > 80"
             " AND getDistance(?, ?, latitude, longitude) < ?"
             " AND insideInterval(date, ?, ?) = 1",
             (info.name, lat, lon, info.area_km, info.date_start, info.date_end),
