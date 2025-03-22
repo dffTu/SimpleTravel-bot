@@ -7,7 +7,7 @@ from aiogram.types import Message
 
 from bot.db.constants import UserInfo
 from bot.globals import database
-from bot.handlers.start_entry import back_to_start
+from bot.handlers.common.start_entry import back_to_start
 
 register_router = Router()
 

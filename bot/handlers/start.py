@@ -8,7 +8,7 @@ from bot.handlers.register import check_registration, start_register_session
 from bot.handlers.search import start_search_session
 from bot.handlers.post import start_post_session
 from bot.handlers.account import start_account_session
-from bot.handlers.start_entry import back_to_start, start_entry
+from bot.handlers.common.start_entry import back_to_start, start_entry
 
 start_router = Router()
 

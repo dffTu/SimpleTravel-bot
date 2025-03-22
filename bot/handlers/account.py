@@ -5,7 +5,8 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 from aiogram.filters import Command
 
-from bot.handlers.start_entry import back_to_start
+from bot.handlers.common.send_post import send_post
+from bot.handlers.common.start_entry import back_to_start
 from bot.globals import database
 
 account_router = Router()
@@ -55,13 +56,15 @@ async def view_subscriptions(callback: types.CallbackQuery, state: FSMContext):
 
     if not bookings:
         message = await callback.message.answer("У вас нет подписок на мероприятия.")
+        await message.edit_reply_markup(reply_markup=account_markup)
+        await callback.message.delete_reply_markup()
     else:
-        subscriptions = "\n".join([f"Мероприятие ID: {booking.post_id}" for booking in bookings])
-        message = await callback.message.answer(f"Ваши подписки:\n{subscriptions}")
+        for booking in bookings:
+            await send_post(callback.message, booking.info, None)
+        await callback.message.answer("Что хотите делать дальше?", reply_markup=account_markup)
+        await callback.message.delete()
 
-    await message.edit_reply_markup(reply_markup=account_markup)
     await callback.answer()
-    await callback.message.delete_reply_markup()
 
 
 # Обработчик для кнопки "Посмотреть информацию о пользователе"

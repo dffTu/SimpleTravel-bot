@@ -11,7 +11,8 @@ from bot.globals import database
 import bot.db.constants as constants
 from urllib.parse import urlencode
 
-from bot.handlers.start_entry import back_to_start
+from bot.handlers.common.send_post import send_post
+from bot.handlers.common.start_entry import back_to_start
 
 
 search_router = Router()
@@ -182,39 +183,12 @@ async def handle_search(
     MAX_POSTS = 4
     posts = posts[:MAX_POSTS]
     for post in posts:
-        text = (
-            f"🌴 Название мероприятия: {post.info.name}\n"
-            f"📆 Дата: {post.info.date}\n"
-            f"📍 Место: {post.info.region}\n"
-            f"✉️ Контакт: {post.info.contacts}\n"
-        )
-
+        if post.is_on_review:
+            continue
         button = types.InlineKeyboardButton(text="Записаться", callback_data=f"book_event_{post.id}")
         keyboard = types.InlineKeyboardMarkup(inline_keyboard=[[button]])
 
-        should_send_text = True
-        if post.info.photos:
-            should_send_text = False
-            media = [
-                types.InputMediaPhoto(media=types.URLInputFile(image_url))
-                for image_url in post.info.photos
-            ]
-
-            # Добавляем текст к первой фотографии
-            media[0].caption = text
-            media[0].parse_mode = "HTML"
-
-            # Отправляем группу медиа с кнопкой
-            try:
-                await message.answer_media_group(media)
-                await message.answer("", reply_markup=keyboard)  # Отправляем кнопку отдельно
-            except (TelegramNetworkError, TelegramEntityTooLarge) as e:
-                logging.error(f"Error during uploading photos: {e.message}")
-                should_send_text = True
-
-        if should_send_text:
-            # Если фотографий нет или при их отправке произошла ошибка, просто отправляем текст с кнопкой
-            await message.answer(text, reply_markup=keyboard)
+        await send_post(message, post.info, keyboard)
 
     # Отправляем клавиатуру в отдельном сообщении
     await message.answer("Что хотите делать дальше?", reply_markup=search_end_keybord)
